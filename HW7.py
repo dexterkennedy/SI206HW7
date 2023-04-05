@@ -201,7 +201,6 @@ def make_seasons_table(data, cur, conn):
 #     the passed year. 
 
 def winners_since_search(year, cur, conn):
-    
     cur.execute("SELECT Winners.name FROM Winners JOIN Seasons ON Seasons.winner_id = Winners.id WHERE Seasons.end_year > ?", (int(year), ))
     results = cur.fetchall()
 
