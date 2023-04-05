@@ -164,14 +164,54 @@ def position_birth_search(position, age, cur, conn):
 #     the passed year. 
 
 def make_winners_table(data, cur, conn):
-    pass
+    winners = []
+    ids = []
+    for season in data['seasons']:
+        winner = season['winner']
+        if winner:
+            winners.append(winner['name'])
+            ids.append(season['id'])
+    cur.execute("CREATE TABLE IF NOT EXISTS Winners (id INTEGER PRIMARY KEY, name TEXT)")
+    for i in range(len(winners)):
+        cur.execute("INSERT OR IGNORE INTO Winners (id, name) VALUES (?,?)",(ids[i], winners[i], ))
+    conn.commit()
 
 def make_seasons_table(data, cur, conn):
-    pass
+    winners_ids = []
+    ids = []
+    end_years = []
+    for season in data['seasons']:
+        winner = season['winner']
+        if winner:
+            cur.execute("SELECT Winners.id FROM Winners WHERE Winners.name = ?", (winner, ))
+            winners_ids.append(cur.fetchone())
+            ids.append(season['id'])
+            end_years.append(season['endDate'].split('-')[0])
+    cur.execute("CREATE TABLE IF NOT EXISTS Seasons (id INTEGER PRIMARY KEY, winner TEXT, end_year INTEGER)")
+    for i in range(len(winners_ids)):
+        cur.execute("INSERT OR IGNORE INTO Seasons (id, winner_id, end_year) VALUES (?,?, ?)",(ids[i], winners_ids[i], end_years[i], ))
+    conn.commit()
+
+#     The third function takes in a year (string), the database cursor, 
+#     and the database connection object. It returns a dictionary of how many 
+#     times each team has won the Premier League since the passed year.
+#     In the dict, each winning team's (full) name is a key,
+#     and the value associated with each team is the number of times
+#     they have won since the year passed, including the season that ended
+#     the passed year. 
 
 def winners_since_search(year, cur, conn):
-    pass
+    
+    cur.execute("SELECT Winners.name FROM Winners JOIN Seasons ON Seasons.winner_id = Winners.id WHERE Seasons.end_year > ?", (int(year), ))
+    results = cur.fetchall()
 
+    winner_dict = {}
+    for name in results:
+        if name in winner_dict:
+            winner_dict[name] =+ 1
+        else:
+            winner_dict[name] = 1
+    return winner_dict
 
 class TestAllMethods(unittest.TestCase):
     def setUp(self):
